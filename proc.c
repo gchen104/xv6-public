@@ -325,6 +325,69 @@ int wait(void)
   }
 }
 
+int waitpid(int pid, int *status, int options)
+{
+  struct proc *p;
+
+  // Changed haveKids to pidFound
+  int pidFound, pid;
+  struct proc *curproc = myproc();
+
+  acquire(&ptable.lock);
+  for (;;)
+  {
+    // Scan through table looking for exited children.
+    pidFound = 0;
+    for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
+    {
+      // Lab[1.c]
+      // If the current process is not the process that was passed in,
+      // we just skip to the next one.
+      if (p->pid != pid)
+      {
+        continue;
+      }
+
+      // Lab[1.c]
+      // Found the specified process ID. So pidFound is set to 1.
+      pidFound = 1;
+
+      if (p->state == ZOMBIE)
+      {
+        // Found the specific process ID.
+        pid = p->pid;
+
+        // Lab[1.c]
+        // Storing the exist status to the 2nd parameter that was passed in.
+        *status = p->exitStatus;
+
+        kfree(p->kstack);
+        p->kstack = 0;
+        freevm(p->pgdir);
+        p->pid = 0;
+        p->parent = 0;
+        p->name[0] = 0;
+        p->killed = 0;
+        p->state = UNUSED;
+        release(&ptable.lock);
+        return pid;
+      }
+    }
+
+    // No point waiting if we don't have any children.
+    // Lab [1.c]
+    // If the specified process ID was not found, return -1.
+    if (!pidFound || curproc->killed)
+    {
+      release(&ptable.lock);
+      return -1;
+    }
+
+    // Wait for children to exit.  (See wakeup1 call in proc_exit.)
+    sleep(curproc, &ptable.lock); //DOC: wait-sleep
+  }
+}
+
 //PAGEBREAK: 42
 // Per-CPU process scheduler.
 // Each CPU calls scheduler() after setting itself up.
