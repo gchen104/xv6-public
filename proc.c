@@ -330,7 +330,7 @@ int waitpid(int pid, int *status, int options)
   struct proc *p;
 
   // Changed haveKids to pidFound
-  int pidFound, pid;
+  int pidFound;
   struct proc *curproc = myproc();
 
   acquire(&ptable.lock);
