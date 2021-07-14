@@ -17,7 +17,7 @@ int sys_exit(void)
   int status;
 
   if (argint(0, &status) < 0)
-    exit(-1);   //Lab[1.a]
+    return -1;  //Lab[1.a]
   exit(status); //Lab[1.a]
   return 0;     // not reached
 }
@@ -25,6 +25,25 @@ int sys_exit(void)
 int sys_wait(void)
 {
   return wait();
+}
+
+// Lab[1.c]
+int sys_waitpid(void)
+{
+  int pid;
+  int *status;
+  int options;
+
+  //Not sure how "argptr(...) works, but passing in 0 doesn't work, so I tried 1 and it works....somehow."
+  if (
+      (argint(0, &pid) < 0) ||
+      (argptr(1, (void *)&status, 2 * sizeof(int)) < 0) ||
+      (argint(0, &options) < 0))
+  {
+    return -1;
+  }
+
+  return waitpid(pid, status, options);
 }
 
 int sys_kill(void)

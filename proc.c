@@ -235,8 +235,8 @@ void exit(int status)
   struct proc *p;
   int fd;
 
-  curproc->exitStatus = status;                  //Lab[1.a]
-  cprintf("Received exit status: %d\n", status); //Lab[1.a]
+  curproc->exitStatus = status; //Lab[1.a]
+  // cprintf("Received exit status: %d\n", status); //Lab[1.a]
 
   if (curproc == initproc)
     panic("init exiting");
