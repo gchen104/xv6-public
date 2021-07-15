@@ -2,6 +2,42 @@
 #include "stat.h"
 #include "user.h"
 
+void waitTest()
+{
+  int pid;
+  int status;
+  int returnStatus;
+
+  if ((pid = fork()) == 0)
+  {
+    // Child goes here
+    printf(1, "Child process created successfully with PID: [%d]\nChild process exiting with status 21...\n", getpid());
+    exit(21); // Can pass in any int for testing purposes
+  }
+  else if (pid < 0)
+  {
+    // Error
+    printf(1, "Error after fork().\n");
+    exit(-1);
+  }
+  else
+  {
+    // Parent goes here
+    returnStatus = wait(&status);
+    if (returnStatus < 0)
+    {
+      // Something went wrong waiting for a child
+      printf(1, "Error: wait() returned -1\n");
+      exit(-1);
+    }
+    else
+    {
+      // wait() successful
+      printf(1, "Finished waiting for PID: [%d] with exit status: [%d]\n", returnStatus, status);
+    }
+  }
+}
+
 void waitpidTest()
 {
   int pids[4];
@@ -34,15 +70,29 @@ void waitpidTest()
     else if (pids[x] == 0)
     {
       // Only child process goes here
-      printf(1, "Child process created successfully with the PID: [%d]\n", getpid());
-      exit(0); // Can pass in any int for testing purposes
+      printf(1, "Child process created successfully with the PID: [%d]\nChild process exiting with status: [%d]\n", getpid(), getpid() + 1);
+      exit(getpid() + 1); // Can pass in any int for testing purposes
     }
   }
 }
 
 int main(int argc, char *argv[])
 {
-  printf(1, "Begin lab1test...\n");
-  waitpidTest();
+  printf(1, "------- Begin lab1test -------\n\t");
+
+  if (atoi(argv[1]) == 1)
+  {
+    printf(1, "Test: wait(int *)\n");
+    waitTest();
+  }
+  else if (atoi(argv[1]) == 2)
+  {
+    printf(1, "Test: waitpid(int, int *, int)\n");
+    waitpidTest();
+  }
+  else
+  {
+    printf(1, "Command line arguments: pass 1 to test wait(int *) or 2 to test waitpid(int, int*, int).\n");
+  }
   exit(0);
 }

@@ -117,7 +117,7 @@ void sched(void);
 void setproc(struct proc *);
 void sleep(void *, struct spinlock *);
 void userinit(void);
-int wait(void);
+int wait(int *);
 
 int waitpid(int, int *, int); // Lab[1.d], calling waitpid() in lab1test.c
 
