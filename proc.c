@@ -7,6 +7,8 @@
 #include "proc.h"
 #include "spinlock.h"
 
+#define LOWEST_PRIORITY 16; // Lab[2]
+
 struct
 {
   struct spinlock lock;
@@ -90,6 +92,8 @@ allocproc(void)
 found:
   p->state = EMBRYO;
   p->pid = nextpid++;
+
+  p->priority = 8; //Lab[2] setting default priority to 12.
 
   release(&ptable.lock);
 
@@ -274,6 +278,7 @@ void exit(int status)
 
   // Jump into the scheduler, never to return.
   curproc->state = ZOMBIE;
+  cprintf("Zombie state for pid [%d] with priority %d\n", curproc->pid, curproc->priority); // Lab[2], prints out this message when the process turns into a zombie state.
   sched();
   panic("zombie exit");
 }
@@ -406,6 +411,8 @@ void scheduler(void)
   struct cpu *c = mycpu();
   c->proc = 0;
 
+  int highestPriority; //Lab[2]
+
   for (;;)
   {
     // Enable interrupts on this processor.
@@ -413,6 +420,26 @@ void scheduler(void)
 
     // Loop over process table looking for process to run.
     acquire(&ptable.lock);
+
+    // Lab[2]
+    // The higher the number the lower the priority, which means 0 is the highest and 16 is the lowest priority.
+    // 'highestPriority' holds the highest priority we find in the following loop.
+    // It will start with the lowest priority number, which is 16.
+    highestPriority = LOWEST_PRIORITY;
+
+    // Before doing any job, we need to find the job with the highest priority in the queue.
+    for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
+    {
+      // Side note: originally, this was 'if (p->priority < highestPriority)' and it would cause the next for loop
+      // to loop infinitely. After messing around and reading, added 'p->state == RUNNABLE' and it no longer
+      // loops infinitely.
+      if (p->priority < highestPriority && p->state == RUNNABLE)
+      {
+        highestPriority = p->priority;
+      }
+    } //  After we iterate through all processes, we will have stored the highest priority number in 'highestPriority'
+
+    //  Here is where we run the process with the highest priority
     for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
     {
       if (p->state != RUNNABLE)
@@ -421,12 +448,25 @@ void scheduler(void)
       // Switch to chosen process.  It is the process's job
       // to release ptable.lock and then reacquire it
       // before jumping back to us.
-      c->proc = p;
-      switchuvm(p);
-      p->state = RUNNING;
 
-      swtch(&(c->scheduler), p->context);
-      switchkvm();
+      if (p->priority <= highestPriority) // If the process has the same or higher priority than what we found previously, run it.
+      {
+        c->proc = p;
+        switchuvm(p);
+        p->state = RUNNING;
+        if (p->priority < 16)
+        {
+          p->priority += 1; // Lab[2], running process will have their priority decrease over time.
+          // cprintf("Running process [%d] with priority [%d]\n", p->pid, p->priority);
+        }
+        swtch(&(c->scheduler), p->context);
+        switchkvm();
+      }
+      else if (p->priority > 0) // If the process is waiting for its turn, increase its priority.
+      {
+        p->priority -= 1; // Lab[2], waiting process will have their priority increase over time.
+        // cprintf("Waiting process [%d] with priority [%d]\n", p->pid, p->priority);
+      }
 
       // Process is done running for now.
       // It should have changed its p->state before coming back.
@@ -434,6 +474,23 @@ void scheduler(void)
     }
     release(&ptable.lock);
   }
+}
+
+// Lab[2]
+int changePriority(int priority)
+{
+  if (priority >= 0 && priority <= 16)
+  { //Make sure the priority passed in is within range.
+    struct proc *p = myproc();
+    p->priority = priority;
+    cprintf("My pid is [%d]\n", p->pid);
+  }
+  else
+  {
+    cprintf("Priority ranges from 0-16, 0 is the highest priority.\n");
+  }
+  yield(); // Lab[2], without calling yield(), priority scheduling doesn't really work. Why?
+  return 0;
 }
 
 // Enter scheduler.  Must hold only ptable.lock

@@ -7,6 +7,16 @@
 #include "mmu.h"
 #include "proc.h"
 
+int sys_changePriority(void)
+{
+  int priority;
+
+  if (argint(0, &priority) < 0)
+    return -1;              //Lab[1.a]
+  changePriority(priority); //Lab[1.a]
+  return 0;                 // not reached
+}
+
 int sys_fork(void)
 {
   return fork();

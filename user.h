@@ -7,6 +7,7 @@ int exit(int) __attribute__((noreturn));
 int wait(int *);
 
 int waitpid(int, int *, int); // Lab[1.d], calling waitpid() in lab1test.c
+int changePriority(int);      // Lab[2]
 
 int pipe(int *);
 int write(int, const void *, int);

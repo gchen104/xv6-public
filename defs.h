@@ -120,6 +120,7 @@ void userinit(void);
 int wait(int *);
 
 int waitpid(int, int *, int); // Lab[1.d], calling waitpid() in lab1test.c
+int changePriority(int);      // Lab[2]
 
 void wakeup(void *);
 void yield(void);
