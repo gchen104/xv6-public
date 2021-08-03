@@ -93,7 +93,7 @@ found:
   p->state = EMBRYO;
   p->pid = nextpid++;
 
-  p->priority = 8; //Lab[2] setting default priority to 12.
+  p->priority = 8; //Lab[2] setting default priority to 8.
 
   release(&ptable.lock);
 
@@ -278,7 +278,10 @@ void exit(int status)
 
   // Jump into the scheduler, never to return.
   curproc->state = ZOMBIE;
-  cprintf("Zombie state for pid [%d] with priority %d\n", curproc->pid, curproc->priority); // Lab[2], prints out this message when the process turns into a zombie state.
+  // cprintf("Entering zombie state with pid [%d] and priority %d\n", curproc->pid, curproc->priority); // Lab[2], prints out this message when the process turns into a zombie state.
+
+  cprintf("Entering zombie state with pid [%d] and priority %d\n", curproc->pid, curproc->priority);
+
   sched();
   panic("zombie exit");
 }
@@ -430,9 +433,6 @@ void scheduler(void)
     // Before doing any job, we need to find the job with the highest priority in the queue.
     for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
     {
-      // Side note: originally, this was 'if (p->priority < highestPriority)' and it would cause the next for loop
-      // to loop infinitely. After messing around and reading, added 'p->state == RUNNABLE' and it no longer
-      // loops infinitely.
       if (p->priority < highestPriority && p->state == RUNNABLE)
       {
         highestPriority = p->priority;
@@ -449,28 +449,27 @@ void scheduler(void)
       // to release ptable.lock and then reacquire it
       // before jumping back to us.
 
-      if (p->priority <= highestPriority) // If the process has the same or higher priority than what we found previously, run it.
+      if (p->priority == highestPriority) // If the process has the same priority than what we found previously, run it.
       {
+        if (p->priority < 16)
+        {
+          p->priority += 1; // Lab[2], running process will have their priority decreased over time.
+        }
         c->proc = p;
         switchuvm(p);
         p->state = RUNNING;
-        if (p->priority < 16)
-        {
-          p->priority += 1; // Lab[2], running process will have their priority decrease over time.
-          // cprintf("Running process [%d] with priority [%d]\n", p->pid, p->priority);
-        }
         swtch(&(c->scheduler), p->context);
         switchkvm();
+
+        c->proc = 0;
       }
       else if (p->priority > 0) // If the process is waiting for its turn, increase its priority.
       {
-        p->priority -= 1; // Lab[2], waiting process will have their priority increase over time.
-        // cprintf("Waiting process [%d] with priority [%d]\n", p->pid, p->priority);
+        p->priority -= 1; // Lab[2], waiting process will have their priority increased over time.
       }
 
       // Process is done running for now.
       // It should have changed its p->state before coming back.
-      c->proc = 0;
     }
     release(&ptable.lock);
   }
@@ -479,15 +478,15 @@ void scheduler(void)
 // Lab[2]
 int changePriority(int priority)
 {
+  struct proc *p = myproc();
   if (priority >= 0 && priority <= 16)
   { //Make sure the priority passed in is within range.
-    struct proc *p = myproc();
     p->priority = priority;
-    cprintf("My pid is [%d]\n", p->pid);
   }
   else
   {
     cprintf("Priority ranges from 0-16, 0 is the highest priority.\n");
+    return -1;
   }
   yield(); // Lab[2], without calling yield(), priority scheduling doesn't really work. Why?
   return 0;
