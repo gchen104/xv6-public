@@ -94,6 +94,8 @@ found:
   p->pid = nextpid++;
 
   p->priority = 8; //Lab[2] setting default priority to 8.
+  p->runtime = 0;  //Lab[2] setting default run time to 0.
+  p->waitTime = 0; //Lab[2] setting default wait itme to 0.
 
   release(&ptable.lock);
 
@@ -280,7 +282,7 @@ void exit(int status)
   curproc->state = ZOMBIE;
   // cprintf("Entering zombie state with pid [%d] and priority %d\n", curproc->pid, curproc->priority); // Lab[2], prints out this message when the process turns into a zombie state.
 
-  cprintf("Entering zombie state with pid [%d] and priority %d\n", curproc->pid, curproc->priority);
+  cprintf("Process [%d] entering zombie state with priority %d, run time %d, wait time %d, and turnaround time: %d.\n", curproc->pid, curproc->priority, curproc->runtime, curproc->waitTime, curproc->waitTime + curproc->runtime);
 
   sched();
   panic("zombie exit");
@@ -400,6 +402,16 @@ int waitpid(int pid, int *status, int options)
   }
 }
 
+int upTime()
+{
+  uint xticks;
+
+  acquire(&tickslock);
+  xticks = ticks;
+  release(&tickslock);
+  return xticks;
+}
+
 //PAGEBREAK: 42
 // Per-CPU process scheduler.
 // Each CPU calls scheduler() after setting itself up.
@@ -413,6 +425,7 @@ void scheduler(void)
   struct proc *p;
   struct cpu *c = mycpu();
   c->proc = 0;
+  // int startTime, endTime;
 
   int highestPriority; //Lab[2]
 
@@ -451,25 +464,30 @@ void scheduler(void)
 
       if (p->priority == highestPriority) // If the process has the same priority than what we found previously, run it.
       {
-        if (p->priority < 16)
-        {
-          p->priority += 1; // Lab[2], running process will have their priority decreased over time.
-        }
+        // if (p->priority < 16)
+        // {
+        //   p->priority += 1; // Lab[2], running process will have their priority decreased over time.
+        // }
         c->proc = p;
+        p->runtime += 1;
         switchuvm(p);
+        // startTime = upTime();
         p->state = RUNNING;
         swtch(&(c->scheduler), p->context);
         switchkvm();
-
+        // endTime = upTime();
+        // Process is done running for now.
+        // It should have changed its p->state before coming back.
         c->proc = 0;
       }
-      else if (p->priority > 0) // If the process is waiting for its turn, increase its priority.
+      else
       {
-        p->priority -= 1; // Lab[2], waiting process will have their priority increased over time.
+        p->waitTime += 1;
       }
-
-      // Process is done running for now.
-      // It should have changed its p->state before coming back.
+      // else if (p->priority > 0) // If the process is waiting for its turn, increase its priority.
+      // {
+      //   p->priority -= 1; // Lab[2], waiting process will have their priority increased over time.
+      // }
     }
     release(&ptable.lock);
   }

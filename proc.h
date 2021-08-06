@@ -62,6 +62,8 @@ struct proc
   char name[16];              // Process name (debugging)
   int exitStatus;             //Lab[1.a]
   int priority;               //Lab[2]
+  int runtime;                //Lab[2]
+  int waitTime;               //Lab[2]
 };
 
 // Process memory is laid out contiguously, low addresses first:
