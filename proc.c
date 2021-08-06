@@ -464,10 +464,7 @@ void scheduler(void)
 
       if (p->priority == highestPriority) // If the process has the same priority than what we found previously, run it.
       {
-        // if (p->priority < 16)
-        // {
-        //   p->priority += 1; // Lab[2], running process will have their priority decreased over time.
-        // }
+
         c->proc = p;
         p->runtime += 1;
         switchuvm(p);
@@ -484,10 +481,6 @@ void scheduler(void)
       {
         p->waitTime += 1;
       }
-      // else if (p->priority > 0) // If the process is waiting for its turn, increase its priority.
-      // {
-      //   p->priority -= 1; // Lab[2], waiting process will have their priority increased over time.
-      // }
     }
     release(&ptable.lock);
   }
