@@ -27,6 +27,7 @@ void schedulerTest()
           z += y / 2;
         }
       }
+      printf(1, "child exiting...\n");
       exit(0);
     }
     else if (pid[x] < 0)

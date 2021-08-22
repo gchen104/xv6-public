@@ -280,9 +280,8 @@ void exit(int status)
 
   // Jump into the scheduler, never to return.
   curproc->state = ZOMBIE;
-  // cprintf("Entering zombie state with pid [%d] and priority %d\n", curproc->pid, curproc->priority); // Lab[2], prints out this message when the process turns into a zombie state.
 
-  cprintf("Process [%d] entering zombie state with priority %d, run time %d, wait time %d, and turnaround time: %d.\n", curproc->pid, curproc->priority, curproc->runtime, curproc->waitTime, curproc->waitTime + curproc->runtime);
+  // cprintf("Process [%d] entering zombie state with priority %d, run time %d, wait time %d, and turnaround time: %d.\n", curproc->pid, curproc->priority, curproc->runtime, curproc->waitTime, curproc->waitTime + curproc->runtime);
 
   sched();
   panic("zombie exit");
@@ -425,9 +424,6 @@ void scheduler(void)
   struct proc *p;
   struct cpu *c = mycpu();
   c->proc = 0;
-  // int startTime, endTime;
-
-  int highestPriority; //Lab[2]
 
   for (;;)
   {
@@ -436,23 +432,6 @@ void scheduler(void)
 
     // Loop over process table looking for process to run.
     acquire(&ptable.lock);
-
-    // Lab[2]
-    // The higher the number the lower the priority, which means 0 is the highest and 16 is the lowest priority.
-    // 'highestPriority' holds the highest priority we find in the following loop.
-    // It will start with the lowest priority number, which is 16.
-    highestPriority = LOWEST_PRIORITY;
-
-    // Before doing any job, we need to find the job with the highest priority in the queue.
-    for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
-    {
-      if (p->priority < highestPriority && p->state == RUNNABLE)
-      {
-        highestPriority = p->priority;
-      }
-    } //  After we iterate through all processes, we will have stored the highest priority number in 'highestPriority'
-
-    //  Here is where we run the process with the highest priority
     for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
     {
       if (p->state != RUNNABLE)
@@ -461,26 +440,16 @@ void scheduler(void)
       // Switch to chosen process.  It is the process's job
       // to release ptable.lock and then reacquire it
       // before jumping back to us.
+      c->proc = p;
+      switchuvm(p);
+      p->state = RUNNING;
 
-      if (p->priority == highestPriority) // If the process has the same priority than what we found previously, run it.
-      {
+      swtch(&(c->scheduler), p->context);
+      switchkvm();
 
-        c->proc = p;
-        p->runtime += 1;
-        switchuvm(p);
-        // startTime = upTime();
-        p->state = RUNNING;
-        swtch(&(c->scheduler), p->context);
-        switchkvm();
-        // endTime = upTime();
-        // Process is done running for now.
-        // It should have changed its p->state before coming back.
-        c->proc = 0;
-      }
-      else
-      {
-        p->waitTime += 1;
-      }
+      // Process is done running for now.
+      // It should have changed its p->state before coming back.
+      c->proc = 0;
     }
     release(&ptable.lock);
   }

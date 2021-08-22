@@ -43,7 +43,6 @@ void trap(struct trapframe *tf)
       exit(0); // Lab[1.a]
     return;
   }
-
   switch (tf->trapno)
   {
   case T_IRQ0 + IRQ_TIMER:
@@ -78,8 +77,28 @@ void trap(struct trapframe *tf)
     lapiceoi();
     break;
 
+  // Lab3
+  case T_PGFLT:
+  {
+    uint addr = rcr2();
+    if (addr < Under_KERNBASE)
+    {
+      if (allocuvm(myproc()->pgdir, PGROUNDDOWN(addr), PGSIZE + PGROUNDDOWN(addr)) == 0)
+      {
+        cprintf("Error in trap.c - case T_PGFLT\n");
+        exit(0);
+      }
+      else
+      {
+        cprintf("trap.c: sucess allocating new pages. Total pages: %d\n", ++myproc()->pages);
+      }
+    }
+    break;
+  }
+
   //PAGEBREAK: 13
   default:
+    cprintf("in default trap\n");
     if (myproc() == 0 || (tf->cs & 3) == 0)
     {
       // In kernel, it must be our mistake.

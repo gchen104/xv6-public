@@ -48,6 +48,8 @@ enum procstate
 struct proc
 {
   uint sz;                    // Size of process memory (bytes)
+  uint newsz;                 // Lab3
+  int pages;                  // Lab3
   pde_t *pgdir;               // Page table
   char *kstack;               // Bottom of kernel stack for this process
   enum procstate state;       // Process state
