@@ -29,7 +29,7 @@ int main(int argc, char *argv[])
   }
   else
   {
-    printf(1, "Please pass any int to the program parameter to trigger page fault. Program exsiting..\n");
+    printf(1, "Please pass any int to the program parameter to trigger page fault. For example, 'lab3test 500'\nProgram exsiting..\n");
     exit(0);
   }
 
