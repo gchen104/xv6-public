@@ -77,20 +77,24 @@ void trap(struct trapframe *tf)
     lapiceoi();
     break;
 
-  // Lab3
+  // // Lab3
   case T_PGFLT:
   {
     uint addr = rcr2();
+    uint returnedNewsz = allocuvm(myproc()->pgdir, PGROUNDDOWN(addr), PGSIZE + PGROUNDDOWN(addr));
+
     if (addr < Under_KERNBASE)
     {
-      if (allocuvm(myproc()->pgdir, PGROUNDDOWN(addr), PGSIZE + PGROUNDDOWN(addr)) == 0)
+      if (returnedNewsz == 0)
       {
         cprintf("Error in trap.c - case T_PGFLT\n");
         exit(0);
       }
       else
       {
-        cprintf("trap.c: sucess allocating new pages. Total pages: %d\n", ++myproc()->pages);
+        cprintf("trap.c: sucess allocating new pages. Total pages: %d. newsz: %d\n",
+                ++myproc()->pages,
+                returnedNewsz);
       }
     }
     break;
@@ -98,7 +102,7 @@ void trap(struct trapframe *tf)
 
   //PAGEBREAK: 13
   default:
-    cprintf("in default trap\n");
+    cprintf("*** in trap.c default case: offending address is [%d]***\n", rcr2());
     if (myproc() == 0 || (tf->cs & 3) == 0)
     {
       // In kernel, it must be our mistake.

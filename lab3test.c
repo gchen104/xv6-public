@@ -25,6 +25,7 @@ int main(int argc, char *argv[])
   if (argc > 1)
   {
     // Pass an arbitrary int that triggers page fault
+    printf(1, "*** Begin recursive funtion ***\n");
     recursiveProgram(atoi(argv[1]));
   }
   else
